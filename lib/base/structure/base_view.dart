@@ -16,7 +16,7 @@ abstract class BaseStatelessView<M extends BaseViewModel>
 
     M viewModel=buildViewModel(context);
 
-    if (viewModel != null) {
+    if (viewModel != null&&isBindViewModel()) {
       resultWidget = ChangeNotifierProvider<M>(create: (context) {
         loadData(context, viewModel);
         return viewModel;
@@ -42,6 +42,10 @@ abstract class BaseStatelessView<M extends BaseViewModel>
 
   bool isEnableLoadingView() {
     return false;
+  }
+
+  bool isBindViewModel(){
+    return true;
   }
 }
 

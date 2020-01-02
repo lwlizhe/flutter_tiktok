@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_novel/base/widget/base_list_item_holder.dart';
+
+import 'base_list_item_holder.dart';
 
 typedef void OnItemTaped<T>(BuildContext context,T data, int index,int currentItemType);
 

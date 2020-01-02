@@ -29,7 +29,7 @@ dependencies:
   fluttertoast: ^3.1.0
   dio: 2.1.0
   provider: ^3.0.0+1
-
+  rxdart: ^0.22.6
 
 dev_dependencies:
   flutter_test:
@@ -79,3 +79,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  assets:
+    - imgs/
+    - imgs/icon/
