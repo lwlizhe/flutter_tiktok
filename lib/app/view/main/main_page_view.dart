@@ -13,19 +13,18 @@ class MainPageView extends BaseStatefulView {
 }
 
 class _MainPageViewState extends BaseStatefulViewState {
-
   MainPageContentType _contentType = MainPageContentType.TYPE_DISCOVERY;
-
-  List<Widget> currentWidgetList = [];
 
   @override
   Widget buildView(BuildContext context, BaseViewModel viewModel) {
+    List<Widget> currentWidgetList = buildMenus();
 
     return Scaffold(
-      body: PageView.custom(
-          childrenDelegate: SliverChildBuilderDelegate((context, index) {
-        return currentWidgetList[index];
-      }, childCount: currentWidgetList.length)),
+      body: ListView(
+        physics: const PageScrollPhysics().applyTo(const ClampingScrollPhysics()),
+        scrollDirection: Axis.horizontal,
+        children: currentWidgetList,
+      ),
     );
   }
 
@@ -35,30 +34,46 @@ class _MainPageViewState extends BaseStatefulViewState {
   }
 
   @override
-  void loadData(BuildContext context, BaseViewModel viewModel) {
-    currentWidgetList.clear();
-    currentWidgetList.add(MainPageContentView((type) {
-      setState(() {
-        _contentType = type;
-      });
-    }, _contentType));
+  void loadData(BuildContext context, BaseViewModel viewModel) {}
+
+  @override
+  void initData() {}
+
+  List<Widget> buildMenus() {
+    List<Widget> result = [];
+
+    result.add(Container(
+      width: MediaQuery.of(context).size.width,
+      height: double.infinity,
+      child: MainPageContentView((type) {
+        setState(() {
+          _contentType = type;
+        });
+      }, _contentType),
+    ));
     switch (_contentType) {
       case MainPageContentType.TYPE_DISCOVERY:
-        currentWidgetList.add(Container(
+        result.add(Container(
+          width: MediaQuery.of(context).size.width,
+          height: double.infinity,
           color: Colors.red,
+          alignment: Alignment.center,
+          child: Text("放详情页的地方"),
         ));
         break;
       case MainPageContentType.TYPE_MINE:
-        currentWidgetList.add(Container(
+        result.add(Container(
+          height: double.infinity,
+          width: 300,
           color: Colors.blue,
+          alignment: Alignment.center,
+          child: Text("放个人菜单的地方"),
         ));
         break;
       default:
         break;
     }
 
+    return result;
   }
-
-  @override
-  void initData() {}
 }

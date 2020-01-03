@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'content/main_content_discovery_page.dart';
+
 typedef OnContentTabChanged(MainPageContentType currentType);
 
 enum MainPageContentType {
@@ -43,17 +45,13 @@ class _MainPageContentViewState extends State<MainPageContentView> with Automati
 
     loadData(context);
 
-    return SafeArea(
-        child: Column(
+    return Column(
           children: <Widget>[
             Expanded(
               child: IndexedStack(
                 index: contentType.index,
                 children: <Widget>[
-                  Container(
-                    color: Colors.white,
-                    child: Text("发现"),
-                  ),
+                  MainContentDiscoveryPage(),
                   Container(
                     color: Colors.white,
                     child: Text("关注"),
@@ -82,7 +80,7 @@ class _MainPageContentViewState extends State<MainPageContentView> with Automati
               ),
             )
           ],
-        ));
+        );
   }
 
   void loadData(BuildContext context) {
@@ -129,19 +127,20 @@ class _MainPageContentViewState extends State<MainPageContentView> with Automati
             height: 30,
             child: Stack(children: [
               Container(
-                  margin: EdgeInsets.only(left: 10.0),
+                  margin: EdgeInsets.only(left: 3.0),
                   decoration: BoxDecoration(
                       color: Color.fromARGB(255, 250, 45, 108),
                       borderRadius: BorderRadius.circular(9.0))),
               Container(
-                  margin: EdgeInsets.only(right: 10.0),
+                  margin: EdgeInsets.only(right: 3.0),
                   decoration: BoxDecoration(
                       color: Color.fromARGB(255, 32, 211, 234),
                       borderRadius: BorderRadius.circular(9.0))),
               Center(
                   child: Container(
                     height: double.infinity,
-                    width: 40,
+                    width: double.infinity,
+                    margin: EdgeInsets.only(left: 3,right: 3),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(9.0)),
