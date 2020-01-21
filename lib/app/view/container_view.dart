@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tiktok/base/structure/base_view.dart';
 import 'package:flutter_tiktok/base/structure/base_view_model.dart';
+import 'package:flutter_tiktok/widget/nested_page_controller.dart';
+import 'package:flutter_tiktok/widget/nested_page_view.dart';
 
-import 'main_page_content_view.dart';
+import 'main/main_page_content_view.dart';
+import 'main/menu/main_page_left_menu_mine_setting.dart';
+import 'main/menu/main_page_left_menu_user_detial.dart';
 
 class MainPageView extends BaseStatefulView {
   @override
@@ -20,9 +24,8 @@ class _MainPageViewState extends BaseStatefulViewState {
     List<Widget> currentWidgetList = buildMenus();
 
     return Scaffold(
-      body: ListView(
-        physics: const PageScrollPhysics().applyTo(const ClampingScrollPhysics()),
-        scrollDirection: Axis.horizontal,
+      body: NestedPrimaryPageView(
+        childController: NestedPageController(initialPage: 1),
         children: currentWidgetList,
       ),
     );
@@ -53,22 +56,10 @@ class _MainPageViewState extends BaseStatefulViewState {
     ));
     switch (_contentType) {
       case MainPageContentType.TYPE_DISCOVERY:
-        result.add(Container(
-          width: MediaQuery.of(context).size.width,
-          height: double.infinity,
-          color: Colors.red,
-          alignment: Alignment.center,
-          child: Text("放详情页的地方"),
-        ));
+        result.add(MainPageLeftMenuUserDetailPage());
         break;
       case MainPageContentType.TYPE_MINE:
-        result.add(Container(
-          height: double.infinity,
-          width: 300,
-          color: Colors.blue,
-          alignment: Alignment.center,
-          child: Text("放个人菜单的地方"),
-        ));
+        result.add(MainPageLeftMenuUserSettingPage());
         break;
       default:
         break;

@@ -6,20 +6,21 @@ import 'package:provider/provider.dart';
 class MainPageLeftMenuUserDetailPage extends BaseStatelessView<UserInfoViewModel>{
   @override
   Widget buildView(BuildContext context, UserInfoViewModel viewModel) {
-    return null;
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: double.infinity,
+      color: Colors.red,
+      alignment: Alignment.center,
+      child: Text("放详情页的地方"),
+    );
   }
 
   @override
   UserInfoViewModel buildViewModel(BuildContext context) {
-    return Provider.of(context);
+    return UserInfoViewModel(Provider.of(context));
   }
 
   @override
   void loadData(BuildContext context, UserInfoViewModel viewModel) {
-  }
-
-  @override
-  bool isBindViewModel() {
-    return false;
   }
 }
