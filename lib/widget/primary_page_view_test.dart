@@ -12,13 +12,12 @@ import 'package:flutter/gestures.dart' show Drag, DragStartBehavior;
 import 'package:flutter/foundation.dart' show precisionErrorTolerance;
 
 class PrimaryPageController extends ScrollController {
-  PrimaryPageController(
-      {this.initialPage = 0,
-      this.keepPage = true,
-      this.viewportFraction = 1.0,
-      this.coordinator,
-      this.isInner = true})
-      : assert(initialPage != null),
+  PrimaryPageController({
+    this.initialPage = 0,
+    this.keepPage = true,
+    this.viewportFraction = 1.0,
+    this.coordinator,
+  })  : assert(initialPage != null),
         assert(keepPage != null),
         assert(viewportFraction != null),
         assert(viewportFraction > 0.0);
@@ -26,7 +25,6 @@ class PrimaryPageController extends ScrollController {
   int initialPage;
 
   final bool keepPage;
-  bool isInner;
 
   final double viewportFraction;
 
@@ -77,19 +75,18 @@ class PrimaryPageController extends ScrollController {
   ScrollPosition createScrollPosition(ScrollPhysics physics,
       ScrollContext context, ScrollPosition oldPosition) {
     return PrimaryPagePosition(
-        physics: physics,
-        context: context,
-        initialPage: initialPage,
-        keepPage: keepPage,
-        viewportFraction: viewportFraction,
-        coordinator: coordinator,
-        oldPosition: oldPosition,
-        isInner: isInner);
+      physics: physics,
+      context: context,
+      initialPage: initialPage,
+      keepPage: keepPage,
+      viewportFraction: viewportFraction,
+      coordinator: coordinator,
+      oldPosition: oldPosition,
+    );
   }
 
   @override
   void attach(ScrollPosition position) {
-
     super.attach(position);
     final PrimaryPagePosition pagePosition = position;
     pagePosition.viewportFraction = viewportFraction;
@@ -101,74 +98,24 @@ class PrimaryPageController extends ScrollController {
 
   @override
   void detach(ScrollPosition position) {
-
     if (positions.contains(position)) {
       super.detach(position);
     }
   }
 }
 
-//class PageMetrics extends FixedScrollMetrics {
-//  /// Creates an immutable snapshot of values associated with a [PrimaryPageView].
-//  PageMetrics({
-//    @required double minScrollExtent,
-//    @required double maxScrollExtent,
-//    @required double pixels,
-//    @required double viewportDimension,
-//    @required AxisDirection axisDirection,
-//    @required this.viewportFraction,
-//  }) : super(
-//          minScrollExtent: minScrollExtent,
-//          maxScrollExtent: maxScrollExtent,
-//          pixels: pixels,
-//          viewportDimension: viewportDimension,
-//          axisDirection: axisDirection,
-//        );
-//
-//  @override
-//  PageMetrics copyWith({
-//    double minScrollExtent,
-//    double maxScrollExtent,
-//    double pixels,
-//    double viewportDimension,
-//    AxisDirection axisDirection,
-//    double viewportFraction,
-//  }) {
-//    return PageMetrics(
-//      minScrollExtent: minScrollExtent ?? this.minScrollExtent,
-//      maxScrollExtent: maxScrollExtent ?? this.maxScrollExtent,
-//      pixels: pixels ?? this.pixels,
-//      viewportDimension: viewportDimension ?? this.viewportDimension,
-//      axisDirection: axisDirection ?? this.axisDirection,
-//      viewportFraction: viewportFraction ?? this.viewportFraction,
-//    );
-//  }
-//
-//  /// The current page displayed in the [PrimaryPageView].
-//  double get page {
-//    return math.max(0.0, pixels.clamp(minScrollExtent, maxScrollExtent)) /
-//        math.max(1.0, viewportDimension * viewportFraction);
-//  }
-//
-//  /// The fraction of the viewport that each page occupies.
-//  ///
-//  /// Used to compute [page] from the current [pixels].
-//  final double viewportFraction;
-//}
-
 class PrimaryPagePosition extends ScrollPosition
     implements PageMetrics, ScrollActivityDelegate {
-  PrimaryPagePosition(
-      {ScrollPhysics physics,
-      ScrollContext context,
-      this.initialPage = 0,
-      bool keepPage = true,
-      double viewportFraction = 1.0,
-      double initialPixels = 0.0,
-      ScrollPosition oldPosition,
-      this.coordinator,
-      this.isInner = true})
-      : assert(initialPage != null),
+  PrimaryPagePosition({
+    ScrollPhysics physics,
+    ScrollContext context,
+    this.initialPage = 0,
+    bool keepPage = true,
+    double viewportFraction = 1.0,
+    double initialPixels = 0.0,
+    ScrollPosition oldPosition,
+    this.coordinator,
+  })  : assert(initialPage != null),
         assert(keepPage != null),
         assert(viewportFraction != null),
         assert(viewportFraction > 0.0),
@@ -186,7 +133,6 @@ class PrimaryPagePosition extends ScrollPosition
 
   final int initialPage;
   PrimaryPageCoordinator coordinator;
-  final bool isInner;
   double _pageToUseOnStartup;
 
   @override
@@ -200,12 +146,6 @@ class PrimaryPagePosition extends ScrollPosition
     if (oldPage != null) forcePixels(getPixelsFromPage(oldPage));
   }
 
-  // The amount of offset that will be added to [minScrollExtent] and subtracted
-  // from [maxScrollExtent], such that every page will properly snap to the center
-  // of the viewport when viewportFraction is greater than 1.
-  //
-  // The value is 0 if viewportFraction is less than or equal to 1, larger than 0
-  // otherwise.
   double get _initialPageOffset =>
       math.max(0, viewportDimension * (viewportFraction - 1) / 2);
 
@@ -465,7 +405,7 @@ class PrimaryPagePosition extends ScrollPosition
   @override
   Drag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     if (coordinator != null && coordinator.isOuterControllerEnable()) {
-      return coordinator.drag(details, dragCancelCallback, isInner);
+      return coordinator.drag(details, dragCancelCallback);
     } else {
       final ScrollDragController drag = ScrollDragController(
         delegate: this,
@@ -570,7 +510,7 @@ class PrimaryPageCoordinator
 
   ScrollDragController _currentDrag;
 
-  bool isOperateBody = false;
+//  bool isOperateBody = false;
 
   PrimaryPageCoordinator(PrimaryPageController selfController,
       PrimaryPageController parentController) {
@@ -608,19 +548,19 @@ class PrimaryPageCoordinator
         ? (getOuterController().position as PrimaryPagePosition)
         : null;
 
-    if (isOperateBody) {
-      if ((outPosition?.pixels == outPosition?.minScrollExtent ||
-              outPosition?.pixels == outPosition?.maxScrollExtent) &&
-          (delta < 0
-              ? innerPosition.pixels < innerPosition.maxScrollExtent
-              : innerPosition.pixels > innerPosition.minScrollExtent)) {
-        innerPosition.applyUserOffset(delta);
-      } else {
-        outPosition.applyUserOffset(delta);
-      }
+//    if (isOperateBody) {
+    if ((outPosition?.pixels == outPosition?.minScrollExtent ||
+            outPosition?.pixels == outPosition?.maxScrollExtent) &&
+        (delta < 0
+            ? innerPosition.pixels < innerPosition.maxScrollExtent
+            : innerPosition.pixels > innerPosition.minScrollExtent)) {
+      innerPosition.applyUserOffset(delta);
     } else {
       outPosition.applyUserOffset(delta);
     }
+//    } else {
+//      outPosition.applyUserOffset(delta);
+//    }
   }
 
   @override
@@ -639,41 +579,41 @@ class PrimaryPageCoordinator
         ? (getOuterController().position as PrimaryPagePosition)
         : null;
 
-    if (isOperateBody) {
-      if ((outPosition != null) &&
-          (outPosition.pixels > outPosition.minScrollExtent &&
-              outPosition.pixels < outPosition.maxScrollExtent)) {
-        outPosition.goBallistic(velocity);
-        innerPosition.goIdle();
+//    if (isOperateBody) {
+    if ((outPosition != null) &&
+        (outPosition.pixels > outPosition.minScrollExtent &&
+            outPosition.pixels < outPosition.maxScrollExtent)) {
+      outPosition.goBallistic(velocity);
+      innerPosition.goIdle();
 
-        _currentDrag?.dispose();
-        _currentDrag = null;
+      _currentDrag?.dispose();
+      _currentDrag = null;
 
-        return;
-      }
+      return;
+    }
 
-      if (velocity > 0) {
-        if (innerPosition.pixels < innerPosition.maxScrollExtent &&
-            innerPosition.pixels > innerPosition.minScrollExtent) {
-          innerPosition.goBallistic(velocity);
-          outPosition?.goIdle();
-        } else {
-          outPosition?.goBallistic(velocity);
-          innerPosition.goIdle();
-        }
+    if (velocity > 0) {
+      if (innerPosition.pixels < innerPosition.maxScrollExtent &&
+          innerPosition.pixels > innerPosition.minScrollExtent) {
+        innerPosition.goBallistic(velocity);
+        outPosition?.goIdle();
       } else {
-        if (innerPosition.pixels < innerPosition.maxScrollExtent) {
-          innerPosition.goBallistic(velocity);
-          outPosition?.goIdle();
-        } else {
-          outPosition?.goBallistic(velocity);
-          innerPosition.goIdle();
-        }
+        outPosition?.goBallistic(velocity);
+        innerPosition.goIdle();
       }
     } else {
-      outPosition?.goBallistic(velocity);
-      innerPosition.goIdle();
+      if (innerPosition.pixels < innerPosition.maxScrollExtent) {
+        innerPosition.goBallistic(velocity);
+        outPosition?.goIdle();
+      } else {
+        outPosition?.goBallistic(velocity);
+        innerPosition.goIdle();
+      }
     }
+//    } else {
+//      outPosition?.goBallistic(velocity);
+//      innerPosition.goIdle();
+//    }
 
     _currentDrag?.dispose();
     _currentDrag = null;
@@ -697,10 +637,7 @@ class PrimaryPageCoordinator
     return this;
   }
 
-  Drag drag(
-      DragStartDetails details, VoidCallback dragCancelCallback, bool isInner) {
-    isOperateBody = isInner;
-
+  Drag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     final ScrollDragController drag = ScrollDragController(
       delegate: this,
       details: details,
@@ -819,7 +756,6 @@ class PrimaryPageView extends StatefulWidget {
         super(key: key) {
     if (this.controller == null) {
       this.controller = PrimaryPageController();
-      this.controller.isInner = primary;
     }
   }
 
@@ -856,7 +792,6 @@ class PrimaryPageView extends StatefulWidget {
         super(key: key) {
     if (this.controller == null) {
       this.controller = PrimaryPageController();
-      this.controller.isInner = primary;
     }
   }
 
@@ -875,7 +810,6 @@ class PrimaryPageView extends StatefulWidget {
         super(key: key) {
     if (this.controller == null) {
       this.controller = PrimaryPageController();
-      this.controller.isInner = primary;
     }
   }
 
