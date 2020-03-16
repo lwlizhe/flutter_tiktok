@@ -26,7 +26,7 @@ class PrimaryPageController extends ScrollController {
   int initialPage;
 
   final bool keepPage;
-  final bool isInner;
+  bool isInner;
 
   final double viewportFraction;
 
@@ -90,35 +90,21 @@ class PrimaryPageController extends ScrollController {
   @override
   void attach(ScrollPosition position) {
 
-    print("__________________________ attach called __________________________");
-
-    print("This is : "+this.toString());
-    print("position is : "+position.toString());
-    print("coordinator is : "+coordinator.toString());
-
-    print("__________________________ attach end __________________________");
-
     super.attach(position);
     final PrimaryPagePosition pagePosition = position;
     pagePosition.viewportFraction = viewportFraction;
 
-    if(position is PrimaryPagePosition){
-      position.coordinator=coordinator;
+    if (position is PrimaryPagePosition) {
+      position.coordinator = coordinator;
     }
   }
 
   @override
   void detach(ScrollPosition position) {
 
-    print("__________________________ detach called __________________________");
-
-    print("This is : "+this.toString());
-    print("position is : "+position.toString());
-    print("coordinator is : "+coordinator.toString());
-
-    print("__________________________ detach end __________________________");
-
-    super.detach(position);
+    if (positions.contains(position)) {
+      super.detach(position);
+    }
   }
 }
 
@@ -731,7 +717,6 @@ class PrimaryPageCoordinator
 
   void beginActivity(
       ScrollActivity newOuterActivity, ScrollActivity newInnerActivity) {
-
     getInnerController().position.beginActivity(newInnerActivity);
     if (isOuterControllerEnable()) {
       getOuterController().position.beginActivity(newOuterActivity);
@@ -809,7 +794,6 @@ class PageScrollPhysics extends ScrollPhysics {
   bool get allowImplicitScrolling => false;
 }
 
-final PrimaryPageController _defaultPageController = PrimaryPageController();
 const PageScrollPhysics _kPagePhysics = PageScrollPhysics();
 
 class PrimaryPageView extends StatefulWidget {
@@ -824,20 +808,24 @@ class PrimaryPageView extends StatefulWidget {
     Key key,
     this.scrollDirection = Axis.horizontal,
     this.reverse = false,
-    ScrollController controller,
+    this.controller,
     this.physics,
     this.pageSnapping = true,
     this.onPageChanged,
     this.primary = false,
     List<Widget> children = const <Widget>[],
     this.dragStartBehavior = DragStartBehavior.start,
-  })  : controller = controller ?? _defaultPageController,
-        childrenDelegate = SliverChildListDelegate(children),
-        super(key: key);
+  })  : childrenDelegate = SliverChildListDelegate(children),
+        super(key: key) {
+    if (this.controller == null) {
+      this.controller = PrimaryPageController();
+      this.controller.isInner = primary;
+    }
+  }
 
   /// Creates a scrollable list that works page by page using widgets that are
   /// created on demand.
-  ///
+  ///delta
   /// This constructor is appropriate for page views with a large (or infinite)
   /// number of children because the builder is called only for those children
   /// that are actually visible.
@@ -855,7 +843,7 @@ class PrimaryPageView extends StatefulWidget {
     Key key,
     this.scrollDirection = Axis.horizontal,
     this.reverse = false,
-    PrimaryPageController controller,
+    this.controller,
     this.physics,
     this.pageSnapping = true,
     this.onPageChanged,
@@ -863,16 +851,20 @@ class PrimaryPageView extends StatefulWidget {
     int itemCount,
     this.primary = false,
     this.dragStartBehavior = DragStartBehavior.start,
-  })  : controller = controller ?? _defaultPageController,
-        childrenDelegate =
+  })  : childrenDelegate =
             SliverChildBuilderDelegate(itemBuilder, childCount: itemCount),
-        super(key: key);
+        super(key: key) {
+    if (this.controller == null) {
+      this.controller = PrimaryPageController();
+      this.controller.isInner = primary;
+    }
+  }
 
   PrimaryPageView.custom({
     Key key,
     this.scrollDirection = Axis.horizontal,
     this.reverse = false,
-    PrimaryPageController controller,
+    this.controller,
     this.physics,
     this.pageSnapping = true,
     this.onPageChanged,
@@ -880,8 +872,12 @@ class PrimaryPageView extends StatefulWidget {
     this.primary = false,
     this.dragStartBehavior = DragStartBehavior.start,
   })  : assert(childrenDelegate != null),
-        controller = controller ?? _defaultPageController,
-        super(key: key);
+        super(key: key) {
+    if (this.controller == null) {
+      this.controller = PrimaryPageController();
+      this.controller.isInner = primary;
+    }
+  }
 
   /// The axis along which the page view scrolls.
   ///
@@ -904,7 +900,7 @@ class PrimaryPageView extends StatefulWidget {
 
   /// An object that can be used to control the position to which this page
   /// view is scrolled.
-  final controller;
+  PrimaryPageController controller;
 
   /// How the page view should respond to user input.
   ///
@@ -1000,7 +996,7 @@ class _PageViewState extends State<PrimaryPageView> {
       child: Scrollable(
         dragStartBehavior: widget.dragStartBehavior,
         axisDirection: axisDirection,
-        controller:widget.controller,
+        controller: widget.controller,
         physics: physics,
         viewportBuilder: (BuildContext context, ViewportOffset position) {
           return Viewport(
