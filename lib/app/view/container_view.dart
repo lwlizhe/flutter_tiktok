@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tiktok/base/structure/base_view.dart';
 import 'package:flutter_tiktok/base/structure/base_view_model.dart';
-import 'package:flutter_tiktok/widget/nested_page_controller.dart';
-import 'package:flutter_tiktok/widget/nested_page_view.dart';
+import 'package:flutter_tiktok/widget/primary_page_view.dart';
 
 import 'main/main_page_content_view.dart';
 import 'main/menu/main_page_left_menu_mine_setting.dart';
@@ -24,8 +23,8 @@ class _MainPageViewState extends BaseStatefulViewState {
     List<Widget> currentWidgetList = buildMenus();
 
     return Scaffold(
-      body: NestedPrimaryPageView(
-        childController: NestedPageController(initialPage: 1),
+      body: PrimaryPageView(
+        controller: PrimaryPageController(initialPage: 0),
         children: currentWidgetList,
       ),
     );

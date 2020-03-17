@@ -27,8 +27,6 @@ class _RotationImageWidgetState extends State<RotationImageWidget>
     );
     controller.addStatusListener((status) {
       if (widget.isRepeat && status == AnimationStatus.completed) {
-        //动画从 controller.forward() 正向执行 结束时会回调此方法
-        print("status is completed");
         //重置起点
         controller.reset();
         //开启
@@ -53,6 +51,5 @@ class _RotationImageWidgetState extends State<RotationImageWidget>
   void dispose() {
     controller.dispose();
     super.dispose();
-
   }
 }

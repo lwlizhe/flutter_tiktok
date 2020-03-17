@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tiktok/base/structure/base_view.dart';
 import 'package:flutter_tiktok/base/structure/base_view_model.dart';
 import 'package:flutter_tiktok/base/util/utils_toast.dart';
-import 'package:flutter_tiktok/widget/nested_tab_view.dart';
+import 'package:flutter_tiktok/widget/primary_tab_view.dart';
 
 import 'recommend/main_content_discovery_recommend_page.dart';
 
@@ -36,7 +36,7 @@ class _MainContentDiscoveryPageState
         height: boxConstrain.maxHeight,
         child: Stack(
           children: <Widget>[
-            NestedTabBarView(
+            PrimaryTabBarView(
                 controller: _primaryTC,
                 children: tabs
                     .map((tab) => Container(
