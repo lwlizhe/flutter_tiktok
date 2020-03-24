@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'app/provider_setup.dart';
 import 'app/view/container_view.dart';
 import 'base/structure/provider/config_provider.dart';
+import 'test/particle_page.dart';
+import 'test_page.dart';
 
 
 void main() async {
@@ -28,6 +30,7 @@ class MyApp extends StatelessWidget {
 //              home: TestWidget());
 //              home: Test3Widget());
               home: MainPageView());
+//              home: ParticlePage());
         }));
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tiktok/base/util/utils_toast.dart';
+import 'package:flutter_tiktok/widget/marquee.dart';
 
 class VideoDescriptionWidget extends StatefulWidget {
   @override
@@ -8,6 +9,15 @@ class VideoDescriptionWidget extends StatefulWidget {
 }
 
 class _VideoDescriptionWidgetState extends State<VideoDescriptionWidget> {
+
+  String testBgmTitle;
+
+  @override
+  void initState() {
+    super.initState();
+    testBgmTitle="此处假装从网络获取到了bgm名";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -39,9 +49,11 @@ class _VideoDescriptionWidgetState extends State<VideoDescriptionWidget> {
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold),
-                      recognizer: TapGestureRecognizer()..onTap = () {
-                        ToastUtils.showToast("跳转到项目地址,https://github.com/lwlizhe/flutter_tiktok");
-                      }),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          ToastUtils.showToast(
+                              "跳转到项目地址,https://github.com/lwlizhe/flutter_tiktok");
+                        }),
                   TextSpan(
                     text: " 给个Star or Issue呗，你的支持才是我更新的动力",
                     style: TextStyle(
@@ -54,11 +66,29 @@ class _VideoDescriptionWidgetState extends State<VideoDescriptionWidget> {
           Padding(
             padding: EdgeInsets.only(top: 12, bottom: 12),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Icon(Icons.music_note,color: Colors.white,),
-                Text(
-                  "跑马灯",
-                  style: TextStyle(color: Colors.white),
+                Icon(
+                  Icons.music_note,
+                  color: Colors.white,
+                ),
+                testBgmTitle.length==0?Container():
+                Container(
+                  height: 20,
+                  width: 200,
+                  child: Marquee(
+                    text: testBgmTitle,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white),
+                    scrollAxis: Axis.horizontal,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    blankSpace: 20.0,
+                    velocity: 60.0,
+                    startPadding: 10.0,
+                    accelerationCurve: Curves.linear,
+                    decelerationCurve: Curves.easeOut,
+                    pauseAfterRound: Duration(seconds: 1),
+                  ),
                 )
               ],
             ),

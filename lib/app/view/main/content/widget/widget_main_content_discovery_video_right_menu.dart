@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tiktok/widget/widget_rotation_image.dart';
 
+import 'widget_main_content_comment_bottom_sheet.dart';
+
 class VideoOperateRightMenuWidget extends StatefulWidget {
   @override
   _VideoOperateRightMenuWidgetState createState() =>
@@ -9,8 +11,14 @@ class VideoOperateRightMenuWidget extends StatefulWidget {
 
 class _VideoOperateRightMenuWidgetState
     extends State<VideoOperateRightMenuWidget> {
+
+
+
   @override
   Widget build(BuildContext context) {
+
+    var commentSheetWidget=MainContentCommentBottomSheetWidget();
+
     return Container(
       height: 400,
       padding: EdgeInsets.only(left: 5, right: 5),
@@ -41,20 +49,27 @@ class _VideoOperateRightMenuWidgetState
               )
             ],
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                Icons.textsms,
-                color: Colors.white,
-                size: 35,
-              ),
-              Text(
-                "666",
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              )
-            ],
+          GestureDetector(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  Icons.textsms,
+                  color: Colors.white,
+                  size: 35,
+                ),
+                Text(
+                  "666",
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                )
+              ],
+            ),
+            onTap: () {
+              showModalBottomSheet(context: context, builder: (context){
+                return commentSheetWidget;
+              });
+            },
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,

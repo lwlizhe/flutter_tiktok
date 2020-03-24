@@ -10,7 +10,7 @@ import 'main/menu/main_page_left_menu_user_detial.dart';
 class MainPageView extends BaseStatefulView {
   @override
   BaseStatefulViewState<BaseStatefulView<BaseViewModel>, BaseViewModel>
-      buildState() {
+  buildState() {
     return _MainPageViewState();
   }
 }
@@ -23,6 +23,7 @@ class _MainPageViewState extends BaseStatefulViewState {
     List<Widget> currentWidgetList = buildMenus();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: PrimaryPageView(
         controller: PrimaryPageController(initialPage: 0),
         children: currentWidgetList,
@@ -43,16 +44,19 @@ class _MainPageViewState extends BaseStatefulViewState {
 
   List<Widget> buildMenus() {
     List<Widget> result = [];
-
-    result.add(Container(
-      width: MediaQuery.of(context).size.width,
-      height: double.infinity,
-      child: MainPageContentView((type) {
-        setState(() {
-          _contentType = type;
-        });
-      }, _contentType),
-    ));
+    result.add(
+        LayoutBuilder(builder: (context, boxConstrains) {
+          return Container(
+            width: boxConstrains.maxWidth,
+            height: double.infinity,
+            child: MainPageContentView((type) {
+              setState(() {
+                _contentType = type;
+              });
+            }, _contentType),
+          );
+        },)
+    );
     switch (_contentType) {
       case MainPageContentType.TYPE_DISCOVERY:
         result.add(MainPageLeftMenuUserDetailPage());

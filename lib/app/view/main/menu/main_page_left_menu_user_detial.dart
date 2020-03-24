@@ -9,37 +9,43 @@ class MainPageLeftMenuUserDetailPage
     extends BaseStatelessView<UserInfoViewModel> {
   @override
   Widget buildView(BuildContext context, UserInfoViewModel viewModel) {
-    return Stack(
-      children: <Widget>[
-        Container(
-          color: Colors.black,
-          child: _MainPageLeftMenuUserDetailPageContent(),
-        ),
-        SafeArea(
-            child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, boxConstrain) {
+        return Stack(
           children: <Widget>[
-            IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.grey[600],
-                  size: 28,
-                ),
-                onPressed: () {
-                  ToastUtils.showToast("返回中间");
-                }),
-            IconButton(
-                icon: Icon(
-                  Icons.menu,
-                  color: Colors.grey[600],
-                  size: 28,
-                ),
-                onPressed: () {
-                  ToastUtils.showToast("打开底部菜单");
-                }),
+            Container(
+              width: boxConstrain.maxWidth,
+              height: boxConstrain.maxHeight,
+              color: Colors.black,
+              child: _MainPageLeftMenuUserDetailPageContent(),
+            ),
+            SafeArea(
+                child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Colors.grey[600],
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      ToastUtils.showToast("返回中间");
+                    }),
+                IconButton(
+                    icon: Icon(
+                      Icons.menu,
+                      color: Colors.grey[600],
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      ToastUtils.showToast("打开底部菜单");
+                    }),
+              ],
+            )),
           ],
-        )),
-      ],
+        );
+      },
     );
   }
 
@@ -73,12 +79,10 @@ class __MainPageLeftMenuUserDetailPageContentState
         ),
 
         /// 主体
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding:
-                  EdgeInsets.only(top: 115, left: 20, right: 20, bottom: 20),
+        Container(
+          child: Padding(
+            padding: EdgeInsets.only(top: 115, left: 20, right: 20, bottom: 0),
+            child: Container(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -93,12 +97,12 @@ class __MainPageLeftMenuUserDetailPageContentState
                           backgroundImage: AssetImage("imgs/avatar/avatar.png"),
                         ),
                       ),
-                      InkWell(
-                        onTap: () {
+                      RawMaterialButton(
+                        fillColor: Colors.pink,
+                        onPressed: () {
                           ToastUtils.showToast("关注");
                         },
                         child: Container(
-                          color: Colors.pink,
                           alignment: Alignment.center,
                           width: 200,
                           height: 40,
@@ -208,11 +212,14 @@ class __MainPageLeftMenuUserDetailPageContentState
                   ),
 
                   /// -----------------------相关作品---------------------------
-                  _MainPageLeftMenuUserDetailPageWorksContent(),
+                  Expanded(
+                    child: _MainPageLeftMenuUserDetailPageWorksContent(),
+                    flex: 1,
+                  ),
                 ],
               ),
-            )
-          ],
+            ),
+          ),
         ),
       ],
     );
@@ -251,7 +258,6 @@ class __MainPageLeftMenuUserDetailPageWorksContentState
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 300,
       child: Column(
         children: <Widget>[
           TabBar(
@@ -272,13 +278,18 @@ class __MainPageLeftMenuUserDetailPageWorksContentState
             child: PrimaryTabBarView(
                 controller: _primaryTC,
                 children: tabs
-                    .map((tab) => Container(
-                  width: 50,
-                  height: 50,
-                  child: Image(
-                      image:
-                      AssetImage("imgs/avatar/avatar.png")),
-                ))
+                    .map((tab) => GridView.builder(
+                          primary: false,
+                          padding: EdgeInsets.zero,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                          ),
+                          itemBuilder: (context, index) {
+                            return Image.asset("imgs/avatar/avatar.png");
+                            },
+                          itemCount: 10,
+                        ))
                     .toList()),
           )
         ],

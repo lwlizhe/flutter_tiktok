@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tiktok/app/viewmodel/main/content/main_content_discovery_view_model.dart';
 import 'package:video_player/video_player.dart';
 
+import 'widget_main_content_discovery_video_controller.dart';
 import 'widget_main_content_discovery_video_description_menu.dart';
 import 'widget_main_content_discovery_video_right_menu.dart';
 
@@ -49,24 +49,12 @@ class _MainContentDiscoveryVideoListWidgetState
                     width: double.infinity,
                     height: double.infinity,
                   )
-                : Container(),
-            Positioned.fill(
-              child: Align(
-                child: InkWell(
-                  child: Text(
-                    _controller.value.isPlaying ? "暂停" : "播放",
-                    style: TextStyle(color: Colors.white),
+                : Container(
+                    alignment: Alignment.center,
+                    child: Text("Loading ……"),
                   ),
-                  onTap: () {
-                    setState(() {
-                      _controller.value.isPlaying
-                          ? _controller.pause()
-                          : _controller.play();
-                    });
-                  },
-                ),
-                alignment: Alignment.center,
-              ),
+            Positioned.fill(
+              child: VideoControllerWidget(_controller),
             ),
             Positioned.fill(
                 child: Align(

@@ -299,9 +299,9 @@ class PrimaryPagePosition extends ScrollPosition
 
   @override
   void applyUserOffset(double delta) {
-    updateUserScrollDirection(
-        delta > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
-    setPixels(pixels - physics.applyPhysicsToUserOffset(this, delta));
+      updateUserScrollDirection(
+          delta > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
+      setPixels(pixels - physics.applyPhysicsToUserOffset(this, delta));
   }
 
   @override
@@ -420,12 +420,13 @@ class PrimaryPagePosition extends ScrollPosition
   @override
   Drag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
     print(this.toString());
+    print(this.coordinator);
 
     if (coordinator != null && coordinator.isOuterControllerEnable()) {
       return coordinator.drag(details, dragCancelCallback);
     } else {
       final ScrollDragController drag = ScrollDragController(
-        delegate: this,
+        delegate: this.coordinator??this,
         details: details,
         onDragCanceled: dragCancelCallback,
         carriedVelocity: physics.carriedMomentum(_heldPreviousVelocity),
