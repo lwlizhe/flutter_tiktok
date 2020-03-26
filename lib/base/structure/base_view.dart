@@ -63,7 +63,7 @@ abstract class BaseStatefulView<M extends BaseViewModel>
 }
 
 abstract class BaseStatefulViewState<T extends BaseStatefulView,
-    M extends BaseViewModel> extends State<T> {
+    M extends BaseViewModel> extends State<T> with AutomaticKeepAliveClientMixin {
 
    M viewModel;
 
@@ -75,6 +75,8 @@ abstract class BaseStatefulViewState<T extends BaseStatefulView,
 
   @override
   Widget build(BuildContext context) {
+
+    super.build(context);
 
     viewModel=buildViewModel(context);
 
@@ -109,4 +111,6 @@ abstract class BaseStatefulViewState<T extends BaseStatefulView,
     return true;
   }
 
+   @override
+   bool get wantKeepAlive => false;
 }

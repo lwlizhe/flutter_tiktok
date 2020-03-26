@@ -79,12 +79,12 @@ class _MainContentDiscoveryVideoListWidgetState
   @override
   void deactivate() {
     super.deactivate();
-    print("缓存移除 " + widget.videoUrl);
+//    print("缓存移除 " + widget.videoUrl);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print("缓存添加 " + widget.videoUrl);
+//    print("缓存添加 " + widget.videoUrl);
   }
 }

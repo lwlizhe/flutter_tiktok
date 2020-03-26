@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 
 class DBManager {
   static const _VERSION = 1;
-  static const _DB_NAME = "flutter_novel.db";
+  static const _DB_NAME = "flutter_novel.db";//TODO：对外暴露出来
   Database _db;
   final _lock = Lock();
 

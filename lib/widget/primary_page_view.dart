@@ -74,7 +74,8 @@ class PrimaryPageController extends ScrollController {
   @override
   ScrollPosition createScrollPosition(ScrollPhysics physics,
       ScrollContext context, ScrollPosition oldPosition) {
-    return PrimaryPagePosition(
+
+    PrimaryPagePosition result= PrimaryPagePosition(
       physics: physics,
       context: context,
       initialPage: initialPage,
@@ -82,18 +83,12 @@ class PrimaryPageController extends ScrollController {
       viewportFraction: viewportFraction,
       oldPosition: oldPosition,
     )..coordinator = coordinator;
+
+    return result;
   }
 
   @override
   void attach(ScrollPosition position) {
-    print(
-        "__________________________ attach called __________________________");
-
-    print("This is : " + this.toString());
-    print("position is : " + position.toString());
-    print("coordinator is : " + coordinator.toString());
-
-    print("__________________________ attach end __________________________");
 
     super.attach(position);
     final PrimaryPagePosition pagePosition = position;
@@ -106,15 +101,6 @@ class PrimaryPageController extends ScrollController {
 
   @override
   void detach(ScrollPosition position) {
-    print(
-        "__________________________ detach called __________________________");
-
-    print("This is : " + this.toString());
-    print("position is : " + position.toString());
-    print("coordinator is : " + coordinator.toString());
-
-    print("__________________________ detach end __________________________");
-
     super.detach(position);
   }
 }
@@ -419,8 +405,6 @@ class PrimaryPagePosition extends ScrollPosition
 
   @override
   Drag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
-    print(this.toString());
-    print(this.coordinator);
 
     if (coordinator != null && coordinator.isOuterControllerEnable()) {
       return coordinator.drag(details, dragCancelCallback);

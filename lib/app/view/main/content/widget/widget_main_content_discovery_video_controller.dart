@@ -39,9 +39,10 @@ class _VideoControllerWidgetState extends State<VideoControllerWidget> {
   Future<ui.Image> loadImage(List<int> img) async {
     final Completer<ui.Image> completer = new Completer();
     ui.decodeImageFromList(img, (ui.Image img) {
-      setState(() {
-        isImageLoaded = true;
-      });
+      isImageLoaded = true;
+      if (!mounted) {
+        setState(() {});
+      }
       return completer.complete(img);
     });
     return completer.future;
@@ -151,18 +152,20 @@ class HeartPainter extends CustomPainter {
   List<_HeartModel> heartIcons = [];
   Duration time;
   ui.Image image;
+  Paint painter = Paint();
 
   HeartPainter(this.heartIcons, this.time, this.image);
 
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint();
     heartIcons.forEach((particle) {
+      print("paint");
+
       var progress = particle.animationProgress.progress(time);
       final animation = particle.tween.transform(progress);
       final position =
           Offset(animation["x"] * size.width, animation["y"] * size.height);
-      paint.color = animation["color"];
+      painter.color = animation["color"];
 
       final Rect srcRct =
           Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
@@ -172,10 +175,14 @@ class HeartPainter extends CustomPainter {
           image.width.toDouble() / 2,
           image.height.toDouble() / 2);
 
-      canvas.drawImageRect(image, srcRct, dstRct, paint); //
+      canvas.drawImageRect(image, srcRct, dstRct, painter); //
     });
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => heartIcons.isNotEmpty;
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    print("shouldRepaint :"+heartIcons.isNotEmpty.toString());
+
+    return heartIcons.isNotEmpty;
+  }
 }

@@ -20,6 +20,13 @@ abstract class BaseViewModel extends BaseProvider{
     super.dispose();
     isDisposed=true;
   }
+
+  @override
+  void notifyListeners() {
+    if(!isDisposed) {
+      super.notifyListeners();
+    }
+  }
 }
 
 enum LoadingStateEnum { LOADING, IDLE, ERROR }

@@ -17,20 +17,29 @@ class _MainContentDiscoveryRecommendPageViewState extends BaseStatefulViewState<
     MainContentDiscoveryRecommendPageView, MainContentDiscoveryViewModel> {
   @override
   Widget buildView(BuildContext context, viewModel) {
+    List<String> videoList = viewModel.dataEntity.videoList;
 
-    List<String> videoList=["assets/videos/wodexiaomubiao1.mp4","assets/videos/wodexiaomubiao2.mp4","assets/videos/wodexiaomubiao3.mp4"];
-
-    return LayoutBuilder(builder: (context,constrains){
-      return ListView.builder(
-          scrollDirection: Axis.vertical,
-          physics: PageScrollPhysics().applyTo(ClampingScrollPhysics()),
-          itemCount: videoList.length,
-          primary: false,
-          itemBuilder: (context, int index) {
-            return MainContentDiscoveryVideoListWidget(
-                videoList[index],constrains);
-          });
-    },);
+    return LayoutBuilder(
+      builder: (context, constrains) {
+        return videoList?.isEmpty ?? true
+            ? Container(
+                child: Text(
+                  "Loading……",
+                  style: TextStyle(color: Colors.white,fontSize: 25),
+                ),
+                alignment: Alignment.center,
+              )
+            : ListView.builder(
+                scrollDirection: Axis.vertical,
+                physics: PageScrollPhysics().applyTo(ClampingScrollPhysics()),
+                itemCount: videoList.length,
+                primary: false,
+                itemBuilder: (context, int index) {
+                  return MainContentDiscoveryVideoListWidget(
+                      videoList[index], constrains);
+                });
+      },
+    );
   }
 
   @override
@@ -42,5 +51,7 @@ class _MainContentDiscoveryRecommendPageViewState extends BaseStatefulViewState<
   void initData() {}
 
   @override
-  void loadData(BuildContext context, viewModel) {}
+  void loadData(BuildContext context, viewModel) {
+    viewModel.getRecommendVideo(null, true);
+  }
 }
