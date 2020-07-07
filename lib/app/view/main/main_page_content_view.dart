@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:flutter_tiktok/base/router/manager_router.dart';
 import 'package:flutter_tiktok/base/structure/base_view.dart';
 import 'package:flutter_tiktok/base/structure/base_view_model.dart';
 
@@ -56,12 +57,17 @@ class _MainPageContentViewState
           child: IndexedStack(
             index: contentType.index,
             children: <Widget>[
+              /// 首页
               MainContentDiscoveryPage(),
+
+              /// 同城的瀑布流，没啥意思，水了
               Container(
                 alignment: Alignment.center,
                 color: Colors.white,
                 child: StaggeredGridView.countBuilder(
-                  primary: false,/// 被这块坑了……注意一下，滑动页面，如果没有特殊要求，把这玩意关了
+                  primary: false,
+
+                  /// 被这块坑了……注意一下，滑动页面，如果没有特殊要求，把这玩意关了
                   crossAxisCount: 4,
                   itemCount: 28,
                   itemBuilder: (BuildContext context, int index) =>
@@ -79,21 +85,22 @@ class _MainPageContentViewState
                   crossAxisSpacing: 4.0,
                 ),
               ),
-              Container(
-                alignment: Alignment.center,
-                color: Colors.white,
-                child: Text("同城"),
-              ),
+
+              /// 相机
               Container(
                 alignment: Alignment.center,
                 color: Colors.white,
                 child: Text("相机"),
               ),
+
+              /// IM
               Container(
                 alignment: Alignment.center,
                 color: Colors.white,
                 child: Text("消息"),
               ),
+
+              /// 我的
               Container(
                 alignment: Alignment.center,
                 color: Colors.white,
@@ -193,10 +200,14 @@ class _MainPageContentViewState
                     );
             }),
             onTap: () {
-              setState(() {
-                contentType = type;
-                widget._contentTabChangedListener(type);
-              });
+              if (type == MainPageContentType.TYPE_CAMERA) {
+//                APPRouter.instance.route(APPRouterRequestOption(context));
+              } else {
+                setState(() {
+                  contentType = type;
+                  widget._contentTabChangedListener(type);
+                });
+              }
             },
           ),
         )));

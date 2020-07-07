@@ -18,11 +18,10 @@ abstract class BaseRouterManager {
 }
 
 class RouterRequestOption {
-  String targetName;
 
   BuildContext context;
 
   Route customRouter;
 
-  RouterRequestOption(this.targetName, this.context, {this.customRouter});
+  RouterRequestOption(this.context, {this.customRouter});
 }

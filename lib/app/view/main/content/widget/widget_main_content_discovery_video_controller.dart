@@ -40,7 +40,7 @@ class _VideoControllerWidgetState extends State<VideoControllerWidget> {
     final Completer<ui.Image> completer = new Completer();
     ui.decodeImageFromList(img, (ui.Image img) {
       isImageLoaded = true;
-      if (!mounted) {
+      if (mounted) {
         setState(() {});
       }
       return completer.complete(img);

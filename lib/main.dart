@@ -27,9 +27,9 @@ class MyApp extends StatelessWidget {
               title: 'Flutter Novel Reader',
               theme: ThemeData(primaryColor:Colors.white,),
 //              home: NovelBookIntroView("592fe687c60e3c4926b040ca"));
-//              home: TestWidget());
+              home: PrimaryPageViewPage());
 //              home: Test3Widget());
-              home: MainPageView());
+//              home: MainPageView());
 //              home: ParticlePage());
         }));
   }
