@@ -32,6 +32,8 @@ class PrimaryPageController extends ScrollController {
 
   List<PrimaryPageController> childPageController = [];
 
+  PrimaryPagePosition get pagePosition => position;
+
   double get page {
     assert(
       positions.isNotEmpty,
@@ -252,76 +254,7 @@ class PrimaryPagePosition extends ScrollPosition
 
   @override
   double setPixels(double newPixels) {
-    /// 如果快速滑动，没结束掉动画那种，那么在这里判断下是否需要传给子Page
-
-    /// 直接设置的自然没有activity，因此可以在此判断是否是代码修改的部分
-    if (!(this.activity is IdleScrollActivity)) {
-      int targetPage =
-          newPixels - pixels < 0 ? (page + 0.5).round() : (page - 0.5).round();
-      targetPage = targetPage < 0 ? 0 : targetPage;
-
-      if (pageController.childPageController.length > targetPage) {
-        PrimaryPageController currentChildPageController =
-            pageController.childPageController[targetPage];
-
-        PrimaryPagePosition currentInnerPosition =
-            currentChildPageController.position;
-        if (currentInnerPosition.activity is IdleScrollActivity) {
-          if (newPixels - pixels < 0
-              ? currentInnerPosition.pixels >
-                  currentInnerPosition.minScrollExtent
-              : currentInnerPosition.pixels <
-                  currentInnerPosition.maxScrollExtent) {
-            if (pixels % viewportDimension != 0) {
-              print(
-                  "------------------------------------------------------------");
-              print("direction: " + (newPixels - pixels < 0 ? "pre" : "next"));
-              print("newPixels: " + newPixels.toString());
-              print("pixels: " + pixels.toString());
-              print("currentInnerPosition pixels: " +
-                  currentInnerPosition.pixels.toString());
-              print("page: " + targetPage.toString());
-              print(
-                  "------------------------------------------------------------");
-              currentInnerPosition.setPixels(newPixels -
-                  viewportDimension * page +
-                  currentInnerPosition.pixels);
-              super.setPixels(viewportDimension * targetPage);
-              return viewportDimension * targetPage;
-            } else {
-              var targetPixels = newPixels -
-                  viewportDimension * page +
-                  currentInnerPosition.pixels;
-              print("targetPix： " +
-                  (newPixels -
-                          viewportDimension * page +
-                          currentInnerPosition.pixels)
-                      .toString());
-              print("maxScrollExtent： " +
-                  (currentInnerPosition.maxScrollExtent).toString());
-              print("currentPix： " + (currentInnerPosition.pixels).toString());
-              if (targetPixels <= currentInnerPosition.maxScrollExtent &&
-                  targetPixels >= currentInnerPosition.minScrollExtent) {
-                currentInnerPosition.setPixels(targetPixels);
-                return 0.0;
-              } else {
-                var offset = targetPixels < currentInnerPosition.maxScrollExtent
-                    ? currentInnerPosition.minScrollExtent
-                    : currentInnerPosition.maxScrollExtent;
-                currentInnerPosition.setPixels(offset);
-                return super.setPixels(newPixels + (targetPixels - offset));
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (this.activity is IdleScrollActivity &&
-        (newPixels <= this.minScrollExtent ||
-            newPixels >= this.maxScrollExtent)) {
-      return 0.0;
-    }
+    assert(activity.isScrolling);
     return super.setPixels(newPixels);
   }
 
@@ -389,16 +322,6 @@ class PrimaryPagePosition extends ScrollPosition
       beginActivity(BallisticScrollActivity(this, simulation, context.vsync));
     } else {
       goIdle();
-      if (pageController.childPageController.length > 0) {
-        for (PrimaryPageController childController
-            in pageController.childPageController) {
-          if (childController.position.pixels % viewportDimension != 0) {
-            (childController.position as PrimaryPagePosition).goBallistic(0.0);
-          } else {
-            (childController.position as PrimaryPagePosition).goIdle();
-          }
-        }
-      }
     }
   }
 
@@ -588,7 +511,183 @@ class PrimaryPagePosition extends ScrollPosition
     }
     return 0.0;
   }
+
+  ScrollActivity createBallisticScrollActivity(
+    Simulation simulation, {
+    @required _NestedBallisticScrollActivityMode mode,
+    PageMetrics metrics,
+  }) {
+    if (simulation == null) return IdleScrollActivity(this);
+    assert(mode != null);
+    switch (mode) {
+      case _NestedBallisticScrollActivityMode.outer:
+        assert(metrics != null);
+        if (metrics.minScrollExtent == metrics.maxScrollExtent)
+          return IdleScrollActivity(this);
+        return _NestedOuterBallisticScrollActivity(
+          coordinator,
+          this,
+          metrics,
+          simulation,
+          context.vsync,
+        );
+      case _NestedBallisticScrollActivityMode.inner:
+        return _NestedInnerBallisticScrollActivity(
+          coordinator,
+          this,
+          simulation,
+          context.vsync,
+        );
+      case _NestedBallisticScrollActivityMode.independent:
+        return BallisticScrollActivity(this, simulation, context.vsync);
+    }
+    return null;
+  }
 }
+
+enum _NestedBallisticScrollActivityMode { outer, inner, independent }
+
+class _NestedInnerBallisticScrollActivity extends BallisticScrollActivity {
+  _NestedInnerBallisticScrollActivity(
+    this.coordinator,
+    PrimaryPagePosition position,
+    Simulation simulation,
+    TickerProvider vsync,
+  ) : super(position, simulation, vsync);
+
+  final PrimaryPageCoordinator coordinator;
+
+  @override
+  PrimaryPagePosition get delegate => super.delegate as PrimaryPagePosition;
+
+  @override
+  void resetActivity() {
+    delegate.beginActivity(coordinator.createInnerBallisticScrollActivity(
+      delegate,
+      velocity,
+    ));
+  }
+
+  @override
+  void applyNewDimensions() {
+    delegate.beginActivity(coordinator.createInnerBallisticScrollActivity(
+      delegate,
+      velocity,
+    ));
+  }
+
+  @override
+  bool applyMoveTo(double value) {
+    return super.applyMoveTo(value);
+  }
+}
+
+class _NestedOuterBallisticScrollActivity extends BallisticScrollActivity {
+  _NestedOuterBallisticScrollActivity(
+    this.coordinator,
+    PrimaryPagePosition position,
+    this.metrics,
+    Simulation simulation,
+    TickerProvider vsync,
+  )   : assert(metrics.minScrollExtent != metrics.maxScrollExtent),
+        assert(metrics.maxScrollExtent > metrics.minScrollExtent),
+        super(position, simulation, vsync);
+
+  final PrimaryPageCoordinator coordinator;
+  final PageMetrics metrics;
+
+  @override
+  PrimaryPagePosition get delegate => super.delegate as PrimaryPagePosition;
+
+  @override
+  void resetActivity() {
+    delegate.beginActivity(
+        coordinator.createOuterBallisticScrollActivity(velocity));
+  }
+
+  @override
+  void applyNewDimensions() {
+    delegate.beginActivity(
+        coordinator.createOuterBallisticScrollActivity(velocity));
+  }
+
+  @override
+  bool applyMoveTo(double value) {
+    bool done = false;
+    if (velocity > 0.0) {
+      if (value < metrics.minScrollExtent) return true;
+      if (value > metrics.maxScrollExtent) {
+        value = metrics.maxScrollExtent;
+        done = true;
+      }
+    } else if (velocity < 0.0) {
+      if (value > metrics.maxScrollExtent) return true;
+      if (value < metrics.minScrollExtent) {
+        value = metrics.minScrollExtent;
+        done = true;
+      }
+    } else {
+      value = value.clamp(metrics.minScrollExtent, metrics.maxScrollExtent)
+          as double;
+      done = true;
+    }
+    final bool result = super.applyMoveTo(value);
+    assert(
+        result); // since we tried to pass an in-range value, it shouldn't ever overflow
+    return !done;
+  }
+}
+
+//class _PrimaryScrollMetrics extends FixedScrollMetrics {
+//  _PrimaryScrollMetrics({
+//    @required double minScrollExtent,
+//    @required double maxScrollExtent,
+//    @required double pixels,
+//    @required double viewportDimension,
+//    @required AxisDirection axisDirection,
+//    @required this.minRange,
+//    @required this.maxRange,
+//    @required this.correctionOffset,
+//  }) : super(
+//          minScrollExtent: minScrollExtent,
+//          maxScrollExtent: maxScrollExtent,
+//          pixels: pixels,
+//          viewportDimension: viewportDimension,
+//          axisDirection: axisDirection,
+//        );
+//
+//  @override
+//  _PrimaryScrollMetrics copyWith({
+//    double minScrollExtent,
+//    double maxScrollExtent,
+//    double pixels,
+//    double viewportDimension,
+//    AxisDirection axisDirection,
+//    double minRange,
+//    double maxRange,
+//    double correctionOffset,
+//  }) {
+//    return _PrimaryScrollMetrics(
+//      minScrollExtent: minScrollExtent ?? this.minScrollExtent,
+//      maxScrollExtent: maxScrollExtent ?? this.maxScrollExtent,
+//      pixels: pixels ?? this.pixels,
+//      viewportDimension: viewportDimension ?? this.viewportDimension,
+//      axisDirection: axisDirection ?? this.axisDirection,
+//      minRange: minRange ?? this.minRange,
+//      maxRange: maxRange ?? this.maxRange,
+//      correctionOffset: correctionOffset ?? this.correctionOffset,
+//    );
+//  }
+//
+//  final double minRange;
+//
+//  final double maxRange;
+//
+//  final double correctionOffset;
+//}
+
+typedef _NestedScrollActivityGetter = ScrollActivity Function(
+    PrimaryPagePosition position);
 
 class PrimaryPageCoordinator
     implements ScrollActivityDelegate, ScrollHoldController {
@@ -597,7 +696,7 @@ class PrimaryPageCoordinator
 
   ScrollDragController _currentDrag;
 
-  bool isOperateBody = false;
+//  bool isOperateBody = false;
 
   PrimaryPageCoordinator(PrimaryPageController selfController,
       PrimaryPageController parentController) {
@@ -633,54 +732,59 @@ class PrimaryPageCoordinator
     updateUserScrollDirection(
         delta > 0.0 ? ScrollDirection.forward : ScrollDirection.reverse);
 
-//    PrimaryPagePosition innerPosition =
-//        (getInnerController().position as PrimaryPagePosition);
     PrimaryPagePosition outPosition = isOuterControllerEnable()
         ? (getOuterController().position as PrimaryPagePosition)
         : null;
 
-//    /// 如果不在头尾，且内部page可滑动
-//    if ((outPosition.pixels > outPosition?.minScrollExtent &&
-//            outPosition.pixels < outPosition?.maxScrollExtent) &&
+    int currentOuterPage = math.min(math.max((outPosition.page).round(), 0),
+        getOuterController().childPageController.length - 1);
+
+    print("-------------------------------------------------------------------");
+    print(currentOuterPage.toString());
+    print("-------------------------------------------------------------------");
+
+    PrimaryPagePosition innerPosition =
+        getOuterController().childPageController[currentOuterPage].position;
+
+    if (getInnerController().childPageController.isEmpty) {
+      innerPosition.applyFullDragUpdate(delta);
+    } else if (delta < 0.0) {
+      final double innerDelta = innerPosition.applyClampedDragUpdate(delta);
+      if (innerDelta != 0.0) {
+        outPosition.applyFullDragUpdate(innerDelta);
+//        for (final PrimaryPageController controller
+//            in getOuterController().childPageController)
+//          (controller.position as PrimaryPagePosition)
+//              .applyFullDragUpdate(innerDelta);
+      }
+    } else {
+      double outerDelta = 0.0; // it will go positive if it changes
+      double overscrolls = 0;
+      final List<PrimaryPagePosition> innerPositions = getOuterController()
+          .childPageController
+          .map((e) => e.pagePosition)
+          .toList();
+      final double overscroll = innerPosition.applyClampedDragUpdate(delta);
+      outerDelta = math.max(outerDelta, overscroll);
+      overscrolls = overscroll;
+
+      if (outerDelta != 0.0)
+        outerDelta -= outPosition.applyClampedDragUpdate(outerDelta);
+      // now deal with any overscroll
+      final double remainingDelta = overscrolls - outerDelta;
+      if (remainingDelta > 0.0)
+        innerPosition.applyFullDragUpdate(remainingDelta);
+    }
+
+//    if ((outPosition?.pixels == outPosition?.minScrollExtent ||
+//            outPosition?.pixels == outPosition?.maxScrollExtent) &&
 //        (delta < 0
 //            ? innerPosition.pixels < innerPosition.maxScrollExtent
 //            : innerPosition.pixels > innerPosition.minScrollExtent)) {
-//      isOperateBody = true;
 //      innerPosition.applyUserOffset(delta);
-//      return;
+//    } else {
+//      outPosition.applyUserOffset(delta);
 //    }
-
-    /// 如果快速滑动，没结束掉动画那种，那么在这里判断下是否需要传给子Page
-    if ((outPosition.pixels >= outPosition?.minScrollExtent &&
-        outPosition.pixels <= outPosition?.maxScrollExtent)) {
-      if (outPosition.pixels % outPosition.viewportDimension != 0) {
-        outPosition.applyUserOffset(delta);
-        return;
-      }
-
-      if (getOuterController().childPageController.length >
-          outPosition.page.round()) {
-        PrimaryPageController currentChildPageController =
-            getOuterController().childPageController[outPosition.page.round()];
-
-        PrimaryPagePosition currentInnerPosition =
-            currentChildPageController.position;
-
-        if (delta < 0
-            ? currentInnerPosition.pixels < currentInnerPosition.maxScrollExtent
-            : currentInnerPosition.pixels >
-                currentInnerPosition.minScrollExtent) {
-          isOperateBody = true;
-          outPosition.goBallistic(0.0);
-          currentInnerPosition.applyUserOffset(delta);
-          return;
-        }
-      }
-    }
-
-    /// 都不符合，那才通过外部滑动
-    isOperateBody = false;
-    outPosition.applyUserOffset(delta);
   }
 
   @override
@@ -693,61 +797,99 @@ class PrimaryPageCoordinator
 
   @override
   void goBallistic(double velocity) {
-    PrimaryPagePosition outPosition = isOuterControllerEnable()
+    beginActivity(
+      createOuterBallisticScrollActivity(velocity),
+      (PrimaryPagePosition position) {
+        return createInnerBallisticScrollActivity(
+          position,
+          velocity,
+        );
+      },
+    );
+  }
+
+  void beginActivity(ScrollActivity newOuterActivity,
+      _NestedScrollActivityGetter innerActivityGetter) {
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
         ? (getOuterController().position as PrimaryPagePosition)
         : null;
+    PrimaryPagePosition _innerPosition = isInnerControllerEnable()
+        ? (getInnerController().position as PrimaryPagePosition)
+        : null;
+    final List<PrimaryPagePosition> innerPositions = getOuterController()
+        .childPageController
+        .map((e) => e.pagePosition)
+        .toList();
 
-    if (getOuterController().childPageController.length >
-        outPosition.page.round()) {
-      PrimaryPageController currentChildPageController =
-          getOuterController().childPageController[outPosition.page.round()];
+    _outerPosition.beginActivity(newOuterActivity);
+    bool scrolling = newOuterActivity.isScrolling;
 
-      PrimaryPagePosition currentInnerPosition =
-          currentChildPageController.position;
+    final ScrollActivity newInnerActivity = innerActivityGetter(_innerPosition);
+    _innerPosition.beginActivity(newInnerActivity);
+    scrolling = newInnerActivity.isScrolling;
 
-//    if (isOperateBody) {
-      if (!isOperateBody &&
-          (outPosition != null) &&
-          (outPosition.pixels > outPosition.minScrollExtent &&
-              outPosition.pixels < outPosition.maxScrollExtent)) {
-        outPosition.goBallistic(velocity);
-        currentInnerPosition.goBallistic(0.0);
-
-        _currentDrag?.dispose();
-        _currentDrag = null;
-
-        return;
-      }
-
-      if (isOperateBody && velocity > 0) {
-        if (currentInnerPosition.pixels <
-                currentInnerPosition.maxScrollExtent &&
-            currentInnerPosition.pixels >
-                currentInnerPosition.minScrollExtent) {
-          outPosition.goBallistic(0.0);
-          currentInnerPosition.goBallistic(velocity);
-        } else {
-          outPosition?.goBallistic(velocity);
-          currentInnerPosition.goBallistic(0.0);
-        }
-      } else {
-        if (currentInnerPosition.pixels <
-            currentInnerPosition.maxScrollExtent) {
-          outPosition.goBallistic(0.0);
-          currentInnerPosition.goBallistic(velocity);
-        } else {
-          outPosition?.goBallistic(velocity);
-          currentInnerPosition.goBallistic(0.0);
-        }
-      }
-    }
     _currentDrag?.dispose();
     _currentDrag = null;
+    if (!scrolling) updateUserScrollDirection(ScrollDirection.idle);
+  }
+
+//  @override
+//  void goBallistic(double velocity) {
+//    PrimaryPagePosition innerPosition =
+//        (getInnerController().position as PrimaryPagePosition);
+//    PrimaryPagePosition outPosition = isOuterControllerEnable()
+//        ? (getOuterController().position as PrimaryPagePosition)
+//        : null;
+//
+//    if ((outPosition != null) &&
+//        (outPosition.pixels > outPosition.minScrollExtent &&
+//            outPosition.pixels < outPosition.maxScrollExtent)) {
+//      outPosition.goBallistic(velocity);
+//      innerPosition.goIdle();
+//
+//      _currentDrag?.dispose();
+//      _currentDrag = null;
+//
+//      return;
+//    }
+//
+//    if (velocity > 0) {
+//      if (innerPosition.pixels < innerPosition.maxScrollExtent &&
+//          innerPosition.pixels > innerPosition.minScrollExtent) {
+//        innerPosition.goBallistic(velocity);
+//        outPosition?.goIdle();
+//      } else {
+//        outPosition?.goBallistic(velocity);
+//        innerPosition.goIdle();
+//      }
+//    } else {
+//      if (innerPosition.pixels < innerPosition.maxScrollExtent) {
+//        innerPosition.goBallistic(velocity);
+//        outPosition?.goIdle();
+//      } else {
+//        outPosition?.goBallistic(velocity);
+//        innerPosition.goIdle();
+//      }
+//    }
+//
+//    _currentDrag?.dispose();
+//    _currentDrag = null;
+//  }
+  static IdleScrollActivity _createIdleScrollActivity(
+      PrimaryPagePosition position) {
+    return IdleScrollActivity(position);
   }
 
   @override
   void goIdle() {
-    beginActivity(IdleScrollActivity(this), IdleScrollActivity(this));
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
+
+    beginActivity(
+      _createIdleScrollActivity(_outerPosition),
+      _createIdleScrollActivity,
+    );
   }
 
   @override
@@ -756,42 +898,37 @@ class PrimaryPageCoordinator
   }
 
   ScrollHoldController hold(VoidCallback holdCancelCallback) {
-    beginActivity(
-        HoldScrollActivity(delegate: this, onHoldCanceled: holdCancelCallback),
-        HoldScrollActivity(delegate: this, onHoldCanceled: holdCancelCallback));
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
 
+    beginActivity(
+      HoldScrollActivity(
+        delegate: _outerPosition,
+        onHoldCanceled: holdCancelCallback,
+      ),
+      (PrimaryPagePosition position) => HoldScrollActivity(delegate: position),
+    );
     return this;
   }
 
   Drag drag(DragStartDetails details, VoidCallback dragCancelCallback) {
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
+
     final ScrollDragController drag = ScrollDragController(
       delegate: this,
       details: details,
       onDragCanceled: dragCancelCallback,
     );
-
     beginActivity(
-        DragScrollActivity(this, drag), DragScrollActivity(this, drag));
-
+      DragScrollActivity(_outerPosition, drag),
+      (PrimaryPagePosition position) => DragScrollActivity(position, drag),
+    );
     assert(_currentDrag == null);
     _currentDrag = drag;
     return drag;
-  }
-
-  void beginActivity(
-      ScrollActivity newOuterActivity, ScrollActivity newInnerActivity) {
-    getInnerController().position.beginActivity(newInnerActivity);
-    if (isOuterControllerEnable()) {
-      getOuterController().position.beginActivity(newOuterActivity);
-    }
-
-    _currentDrag?.dispose();
-    _currentDrag = null;
-
-    if ((newOuterActivity == null || !newOuterActivity.isScrolling) &&
-        (newInnerActivity == null || !newInnerActivity.isScrolling)) {
-      updateUserScrollDirection(ScrollDirection.idle);
-    }
   }
 
   ScrollDirection get userScrollDirection => _userScrollDirection;
@@ -801,10 +938,205 @@ class PrimaryPageCoordinator
     assert(value != null);
     if (userScrollDirection == value) return;
     _userScrollDirection = value;
-    getOuterController().position.didUpdateScrollDirection(value);
+    getInnerController().position.didUpdateScrollDirection(value);
     if (isOuterControllerEnable()) {
-      getInnerController().position.didUpdateScrollDirection(value);
+      getOuterController().position.didUpdateScrollDirection(value);
     }
+  }
+
+  ScrollActivity createOuterBallisticScrollActivity(double velocity) {
+    // This function creates a ballistic scroll for the outer scrollable.
+    //
+    // It assumes that the outer scrollable can't be overscrolled, and sets up a
+    // ballistic scroll over the combined space of the innerPositions and the
+    // outerPosition.
+
+    // First we must pick a representative inner position that we will care
+    // about. This is somewhat arbitrary. Ideally we'd pick the one that is "in
+    // the center" but there isn't currently a good way to do that so we
+    // arbitrarily pick the one that is the furthest away from the infinity we
+    // are heading towards.
+    PrimaryPagePosition innerPosition;
+
+    final List<PrimaryPagePosition> _innerPositions = getOuterController()
+        .childPageController
+        .map((e) => e.pagePosition)
+        .toList();
+
+    PrimaryPagePosition outPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
+
+    if (velocity != 0.0) {
+      PrimaryPagePosition position = _innerPositions[0];
+      if (innerPosition != null) {
+        if (velocity > 0.0) {
+          if (innerPosition.pixels < position.pixels) ;
+        } else {
+          assert(velocity < 0.0);
+          if (innerPosition.pixels > position.pixels) ;
+        }
+      }
+      innerPosition = position;
+    }
+
+    if (innerPosition != null &&
+        (velocity > 0
+            ? innerPosition.pixels < innerPosition.maxScrollExtent
+            : innerPosition.pixels > innerPosition.minScrollExtent)) {
+      return IdleScrollActivity(this);
+    }
+
+    if (innerPosition == null) {
+      // It's either just us or a velocity=0 situation.
+      return outPosition.createBallisticScrollActivity(
+        outPosition.physics.createBallisticSimulation(
+          outPosition,
+          velocity,
+        ),
+        mode: _NestedBallisticScrollActivityMode.independent,
+      );
+    }
+
+//    final PageMetrics metrics = _getMetrics(innerPosition, velocity);
+
+    return outPosition.createBallisticScrollActivity(
+      outPosition.physics.createBallisticSimulation(outPosition, velocity),
+      mode: _NestedBallisticScrollActivityMode.outer,
+      metrics: outPosition,
+    );
+  }
+
+  @protected
+  ScrollActivity createInnerBallisticScrollActivity(
+      PrimaryPagePosition position, double velocity) {
+    ScrollActivity activity = position.createBallisticScrollActivity(
+      position.physics.createBallisticSimulation(
+        position,
+        velocity,
+      ),
+      mode: _NestedBallisticScrollActivityMode.inner,
+    );
+    return activity;
+  }
+
+//  _PrimaryScrollMetrics _getMetrics(
+//      PrimaryPagePosition innerPosition, double velocity) {
+//    assert(innerPosition != null);
+//
+//    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+//        ? (getOuterController().position as PrimaryPagePosition)
+//        : null;
+//
+//    double pixels, minRange, maxRange, correctionOffset, extra;
+//    if (innerPosition.pixels == innerPosition.minScrollExtent) {
+//      pixels = _outerPosition.pixels.clamp(
+//        _outerPosition.minScrollExtent,
+//        _outerPosition.maxScrollExtent,
+//      ) as double; // TODO(ianh): gracefully handle out-of-range outer positions
+//      minRange = _outerPosition.minScrollExtent;
+//      maxRange = _outerPosition.maxScrollExtent;
+//      assert(minRange <= maxRange);
+//      correctionOffset = 0.0;
+//      extra = 0.0;
+//    } else {
+//      assert(innerPosition.pixels != innerPosition.minScrollExtent);
+//      if (innerPosition.pixels < innerPosition.minScrollExtent) {
+//        pixels = innerPosition.pixels -
+//            innerPosition.minScrollExtent +
+//            _outerPosition.minScrollExtent;
+//      } else {
+//        assert(innerPosition.pixels > innerPosition.minScrollExtent);
+//        pixels = innerPosition.pixels -
+//            innerPosition.minScrollExtent +
+//            _outerPosition.maxScrollExtent;
+//      }
+//      if ((velocity > 0.0) &&
+//          (innerPosition.pixels > innerPosition.minScrollExtent)) {
+//        // This handles going forward (fling up) and inner list is scrolled past
+//        // zero. We want to grab the extra pixels immediately to shrink.
+//        extra = _outerPosition.maxScrollExtent - _outerPosition.pixels;
+//        assert(extra >= 0.0);
+//        minRange = pixels;
+//        maxRange = pixels + extra;
+//        assert(minRange <= maxRange);
+//        correctionOffset = _outerPosition.pixels - pixels;
+//      } else if ((velocity < 0.0) &&
+//          (innerPosition.pixels < innerPosition.minScrollExtent)) {
+//        // This handles going backward (fling down) and inner list is
+//        // underscrolled. We want to grab the extra pixels immediately to grow.
+//        extra = _outerPosition.pixels - _outerPosition.minScrollExtent;
+//        assert(extra >= 0.0);
+//        minRange = pixels - extra;
+//        maxRange = pixels;
+//        assert(minRange <= maxRange);
+//        correctionOffset = _outerPosition.pixels - pixels;
+//      } else {
+//        // This handles going forward (fling up) and inner list is
+//        // underscrolled, OR, going backward (fling down) and inner list is
+//        // scrolled past zero. We want to skip the pixels we don't need to grow
+//        // or shrink over.
+//        if (velocity > 0.0) {
+//          // shrinking
+//          extra = _outerPosition.minScrollExtent - _outerPosition.pixels;
+//        } else {
+//          assert(velocity < 0.0);
+//          // growing
+//          extra = _outerPosition.pixels -
+//              (_outerPosition.maxScrollExtent - _outerPosition.minScrollExtent);
+//        }
+//        assert(extra <= 0.0);
+//        minRange = _outerPosition.minScrollExtent;
+//        maxRange = _outerPosition.maxScrollExtent + extra;
+//        assert(minRange <= maxRange);
+//        correctionOffset = 0.0;
+//      }
+//    }
+//    return _PrimaryScrollMetrics(
+//      minScrollExtent: _outerPosition.minScrollExtent,
+//      maxScrollExtent: _outerPosition.maxScrollExtent +
+//          innerPosition.maxScrollExtent -
+//          innerPosition.minScrollExtent +
+//          extra,
+//      pixels: pixels,
+//      viewportDimension: _outerPosition.viewportDimension,
+//      axisDirection: _outerPosition.axisDirection,
+//      minRange: minRange,
+//      maxRange: maxRange,
+//      correctionOffset: correctionOffset,
+//    );
+//  }
+
+  double unnestOffset(double value, PrimaryPagePosition source) {
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
+
+    if (source == _outerPosition)
+      return value.clamp(
+        _outerPosition.minScrollExtent,
+        _outerPosition.maxScrollExtent,
+      ) as double;
+    if (value < source.minScrollExtent)
+      return value - source.minScrollExtent + _outerPosition.minScrollExtent;
+    return value - source.minScrollExtent + _outerPosition.maxScrollExtent;
+  }
+
+  double nestOffset(double value, PrimaryPagePosition target) {
+    PrimaryPagePosition _outerPosition = isOuterControllerEnable()
+        ? (getOuterController().position as PrimaryPagePosition)
+        : null;
+
+    if (target == _outerPosition)
+      return value.clamp(
+        _outerPosition.minScrollExtent,
+        _outerPosition.maxScrollExtent,
+      ) as double;
+    if (value < _outerPosition.minScrollExtent)
+      return value - _outerPosition.minScrollExtent + target.minScrollExtent;
+    if (value > _outerPosition.maxScrollExtent)
+      return value - _outerPosition.maxScrollExtent + target.minScrollExtent;
+    return value;
   }
 }
 
