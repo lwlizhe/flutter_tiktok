@@ -489,6 +489,28 @@ class PrimaryPagePosition extends ScrollPosition
     return delta + offset;
   }
 
+  double applyPageExtraUpdate(double delta) {
+    final double min = delta < 0.0
+        ? -double.infinity
+        : math.min(page.toInt() * viewportDimension, pixels);
+    // The logic for max is equivalent but on the other side.
+    final double max = delta > 0.0
+        ? double.infinity
+        : math.max((page.toInt() + 1) * viewportDimension, pixels);
+    final double oldPixels = pixels;
+    final double newPixels = (pixels - delta).clamp(min, max);
+    final double clampedDelta = newPixels - pixels;
+    if (clampedDelta == 0.0) return delta;
+    final double overscroll = physics.applyBoundaryConditions(this, newPixels);
+    final double actualNewPixels = newPixels - overscroll;
+    final double offset = actualNewPixels - oldPixels;
+    if (offset != 0.0) {
+      forcePixels(actualNewPixels);
+      didUpdateScrollPositionBy(offset);
+    }
+    return (delta + offset).abs() < 0.00001 ? 0 : delta + offset;
+  }
+
   // Returns the overscroll.
   double applyFullDragUpdate(double delta) {
     assert(delta != 0.0);
@@ -702,9 +724,15 @@ class PrimaryPageCoordinator
       PrimaryPageController parentController) {
     _selfController = selfController;
     _selfController.coordinator = this;
+    if (_selfController.hasClients) {
+      (_selfController.position as PrimaryPagePosition).coordinator = this;
+    }
 
     _outerController = parentController;
     _outerController.coordinator = this;
+    if (_outerController.hasClients) {
+      (_outerController.position as PrimaryPagePosition).coordinator = this;
+    }
 
     if (!_outerController.childPageController.contains(_selfController)) {
       _outerController.childPageController.add(_selfController);
@@ -739,41 +767,61 @@ class PrimaryPageCoordinator
     int currentOuterPage = math.min(math.max((outPosition.page).round(), 0),
         getOuterController().childPageController.length - 1);
 
-    print("-------------------------------------------------------------------");
-    print(currentOuterPage.toString());
-    print("-------------------------------------------------------------------");
+    print(
+        "-------------------------------------------------------------------");
+    print("outPosition page : " + outPosition.page.toString());
+    print("currentOuterPage page : " + currentOuterPage.toString());
+    print(
+        "-------------------------------------------------------------------");
 
+    // PrimaryPagePosition innerPosition = getInnerController().pagePosition;
     PrimaryPagePosition innerPosition =
         getOuterController().childPageController[currentOuterPage].position;
 
-    if (getInnerController().childPageController.isEmpty) {
-      innerPosition.applyFullDragUpdate(delta);
-    } else if (delta < 0.0) {
-      final double innerDelta = innerPosition.applyClampedDragUpdate(delta);
-      if (innerDelta != 0.0) {
-        outPosition.applyFullDragUpdate(innerDelta);
+    // if (getInnerController().childPageController.isEmpty) {
+    //   innerPosition.applyFullDragUpdate(delta);
+    // } else if (delta < 0.0) {
+
+    if (outPosition.page % 1 == 0) {
+      if (delta < 0.0) {
+        final double innerDelta = innerPosition.applyClampedDragUpdate(delta);
+        if (innerDelta != 0.0) {
+          outPosition.applyFullDragUpdate(innerDelta);
 //        for (final PrimaryPageController controller
 //            in getOuterController().childPageController)
 //          (controller.position as PrimaryPagePosition)
 //              .applyFullDragUpdate(innerDelta);
+        }
+      } else {
+        double outerDelta = 0.0; // it will go positive if it changes
+        double overscrolls = 0;
+        final List<PrimaryPagePosition> innerPositions = getOuterController()
+            .childPageController
+            .map((e) => e.pagePosition)
+            .toList();
+        final double overscroll = innerPosition.applyClampedDragUpdate(delta);
+        outerDelta = math.max(outerDelta, overscroll);
+        overscrolls = overscroll;
+
+        if (outerDelta != 0.0)
+          outerDelta -= outPosition.applyClampedDragUpdate(outerDelta);
+        // now deal with any overscroll
+        final double remainingDelta = overscrolls - outerDelta;
+        if (remainingDelta > 0.0)
+          innerPosition.applyFullDragUpdate(remainingDelta);
       }
     } else {
-      double outerDelta = 0.0; // it will go positive if it changes
-      double overscrolls = 0;
-      final List<PrimaryPagePosition> innerPositions = getOuterController()
-          .childPageController
-          .map((e) => e.pagePosition)
-          .toList();
-      final double overscroll = innerPosition.applyClampedDragUpdate(delta);
-      outerDelta = math.max(outerDelta, overscroll);
-      overscrolls = overscroll;
-
-      if (outerDelta != 0.0)
-        outerDelta -= outPosition.applyClampedDragUpdate(outerDelta);
-      // now deal with any overscroll
-      final double remainingDelta = overscrolls - outerDelta;
-      if (remainingDelta > 0.0)
-        innerPosition.applyFullDragUpdate(remainingDelta);
+      double remainDelta = outPosition.applyPageExtraUpdate(delta);
+      if (remainDelta != 0) {
+        print(
+            "-------------------------------------------------------------------");
+        print("到地方了" + outPosition.page.toString());
+        print(
+            "-------------------------------------------------------------------");
+        ((getOuterController().childPageController[currentOuterPage].position)
+                as PrimaryPagePosition)
+            .applyClampedDragUpdate(remainDelta);
+      }
     }
 
 //    if ((outPosition?.pixels == outPosition?.minScrollExtent ||
@@ -968,7 +1016,9 @@ class PrimaryPageCoordinator
         : null;
 
     if (velocity != 0.0) {
-      PrimaryPagePosition position = _innerPositions[0];
+      int currentOuterPage = math.min(math.max((outPosition.page).round(), 0),
+          getOuterController().childPageController.length - 1);
+      PrimaryPagePosition position = _innerPositions[currentOuterPage];
       if (innerPosition != null) {
         if (velocity > 0.0) {
           if (innerPosition.pixels < position.pixels) ;
@@ -1010,14 +1060,19 @@ class PrimaryPageCoordinator
   @protected
   ScrollActivity createInnerBallisticScrollActivity(
       PrimaryPagePosition position, double velocity) {
-    ScrollActivity activity = position.createBallisticScrollActivity(
-      position.physics.createBallisticSimulation(
-        position,
-        velocity,
-      ),
-      mode: _NestedBallisticScrollActivityMode.inner,
-    );
-    return activity;
+    var outPosition = getOuterController().position;
+    if (outPosition is PrimaryPagePosition && outPosition.page % 1 == 0) {
+      ScrollActivity activity = position.createBallisticScrollActivity(
+        position.physics.createBallisticSimulation(
+          position,
+          velocity,
+        ),
+        mode: _NestedBallisticScrollActivityMode.inner,
+      );
+      return activity;
+    } else {
+      return IdleScrollActivity(this);
+    }
   }
 
 //  _PrimaryScrollMetrics _getMetrics(
@@ -1294,11 +1349,6 @@ class _PageViewState extends State<PrimaryPageView> {
     _lastReportedPage = widget.controller.initialPage;
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
   AxisDirection _getDirection(BuildContext context) {
     switch (widget.scrollDirection) {
       case Axis.horizontal:
@@ -1356,7 +1406,7 @@ class _PageViewState extends State<PrimaryPageView> {
         /// 不知道是我的问题还是flutter的问题
         /// 不过既然知道原因了
         /// 用key打个补丁，加上个身份证就好了……有空研究下这个神奇的问题
-        key: Key(widget.controller.toString()),
+        // key: Key(widget.controller.toString()),
         dragStartBehavior: widget.dragStartBehavior,
         axisDirection: axisDirection,
         controller: widget.controller,
